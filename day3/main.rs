@@ -33,7 +33,7 @@ fn main() {
 
     println!("Trees in (3, 1): {}", case_one);
     println!(
-        "Product of trees in multple cases: {}",
+        "Product of trees in multiple cases: {}",
         case_two * case_three * case_four * case_five * case_six
     );
 }
