@@ -1,0 +1,17 @@
+[package]
+name = "aoc2020"
+version = "0.1.0"
+authors = ["ilya <ilyaandreev2010@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "day1"
+path = "day1/main.rs"
+
+[[bin]]
+name = "day2"
+path = "day2/main.rs"
+
+[[bin]]
+name = "day3"
+path = "day3/main.rs"
