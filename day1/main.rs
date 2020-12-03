@@ -4,19 +4,21 @@ use std::io::{BufRead, BufReader};
 
 struct Finder {
     nums: HashMap<i32, bool>,
+    target: i32,
 }
 
 impl Finder {
-    fn new() -> Finder {
+    fn new(target: i32) -> Finder {
         Finder {
             nums: HashMap::new(),
+            target: target,
         }
     }
 
     fn add_and_check(&mut self, num: i32) -> Option<i32> {
         self.nums.insert(num, true);
 
-        let complement = 2020 - num;
+        let complement = self.target - num;
         if self.nums.contains_key(&complement) {
             return Some(num * complement);
         }
@@ -27,7 +29,7 @@ impl Finder {
     fn find_triplet(&mut self) -> Option<i32> {
         for (num_outer, _) in &self.nums {
             for (num_inner, _) in &self.nums {
-                let complement = 2020 - num_outer - num_inner;
+                let complement = self.target - num_outer - num_inner;
                 if self.nums.contains_key(&complement) {
                     return Some(complement * num_outer * num_inner);
                 }
@@ -42,7 +44,7 @@ fn main() {
     let filename = "day1/input.txt";
     let file = File::open(filename).unwrap();
     let reader = BufReader::new(file);
-    let mut finder = Finder::new();
+    let mut finder = Finder::new(2020);
 
     for (_, line) in reader.lines().enumerate() {
         let num = line.unwrap().parse::<i32>().unwrap();
