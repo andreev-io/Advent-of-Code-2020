@@ -24,7 +24,7 @@ fn validate_strong(password: &str, letter: char, pos_one: usize, pos_two: usize)
     let first_hit = first_char == letter;
     let second_hit = second_char == letter;
 
-    let res = if (first_hit && !second_hit) || (!first_hit && second_hit) {
+    let res = if first_hit ^ second_hit {
         Security::Good
     } else {
         Security::Bad
