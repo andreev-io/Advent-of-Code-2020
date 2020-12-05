@@ -1,200 +1,98 @@
+use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-
-//TODO: REFACTOR BIG TIME
-// REFACTOR MACHINE GO brrrrrr!
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 enum Entry {
+    Bad,
     Weak,
     Strong,
-    Bad,
 }
 
-struct Checker {
-    re_line: regex::Regex,
-    re_entry: regex::Regex,
-    dict: HashMap<String, String>,
-}
-
-impl Checker {
-    fn new() -> Checker {
-        Checker {
-            re_line: Regex::new(r"([a-z]{3}:#?\w+)").unwrap(),
-            re_entry: Regex::new(r"(.*):(.*)").unwrap(),
-            dict: HashMap::new(),
-        }
-    }
-
-    fn check_entry_weak(&self) -> bool {
-        let is_good = self.dict.contains_key("byr")
-            && self.dict.contains_key("iyr")
-            && self.dict.contains_key("eyr")
-            && self.dict.contains_key("hgt")
-            && self.dict.contains_key("hcl")
-            && self.dict.contains_key("pid")
-            && self.dict.contains_key("ecl");
-
-        is_good
-    }
-
-    fn check_byr(byr: &str) -> bool {
-        match byr.parse::<i32>() {
-            Ok(yr) => return 1920 <= yr && yr <= 2002,
-            Err(_) => return false,
-        }
-    }
-
-    fn check_iyr(iyr: &str) -> bool {
-        match iyr.parse::<i32>() {
-            Ok(yr) => return 2010 <= yr && yr <= 2020,
-            Err(_) => return false,
-        }
-    }
-
-    fn check_eyr(eyr: &str) -> bool {
-        match eyr.parse::<i32>() {
-            Ok(yr) => return 2020 <= yr && yr <= 2030,
-            Err(_) => return false,
-        }
-    }
-
-    fn check_hgt(hgt: &str) -> bool {
-        let re_hgt = Regex::new(r"([0-9]{2,3})([a-z]{2})").unwrap();
-        match re_hgt.captures(hgt) {
-            Some(captures) => {
-                let height = captures.get(1).map_or("", |m| m.as_str());
-                let units = captures.get(2).map_or("", |m| m.as_str());
-                match height.parse::<i32>() {
-                    Ok(h) => {
-                        if units == "in" {
-                            return 59 <= h && h <= 76;
-                        } else if units == "cm" {
-                            return 150 <= h && h <= 193;
-                        } else {
-                            return false;
-                        }
-                    }
-                    Err(_) => return false,
-                }
+lazy_static! {
+    static ref RE_HCL: Regex = Regex::new(r"#[a-f0-9]{6}$").unwrap();
+    static ref EYES: [&'static str; 7] = ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"];
+    static ref CHECKS: [(&'static str, fn(&str) -> bool); 7] = [
+        ("ecl", |ecl| EYES.iter().any(|&eye| eye == ecl)),
+        ("hcl", |hcl| RE_HCL.is_match(hcl)),
+        ("pid", |pid| pid.len() == 9),
+        ("byr", |byr| {
+            let yr = byr.parse::<i32>().unwrap();
+            1920 <= yr && yr <= 2002
+        }),
+        ("iyr", |iyr| {
+            let yr = iyr.parse::<i32>().unwrap();
+            2010 <= yr && yr <= 2020
+        }),
+        ("eyr", |eyr| {
+            let yr = eyr.parse::<i32>().unwrap();
+            2020 <= yr && yr <= 2030
+        }),
+        ("hgt", |hgt| {
+            if let Some(height) = hgt.strip_suffix("cm") {
+                let h = height.parse().unwrap();
+                150 <= h && h <= 193
+            } else if let Some(height) = hgt.strip_suffix("in") {
+                let h = height.parse().unwrap();
+                59 <= h && h <= 76
+            } else {
+                false
             }
-            None => return false,
-        };
-    }
+        }),
+    ];
+}
 
-    fn check_hcl(hcl: &str) -> bool {
-        let re_hcl = Regex::new(r"#[a-f0-9]{6}$").unwrap();
-        return re_hcl.is_match(hcl);
-    }
-
-    fn check_ecl(ecl: &str) -> bool {
-        let eyes = vec!["amb", "blu", "brn", "gry", "grn", "hzl", "oth"];
-        eyes.iter().any(|&eye| eye == ecl)
-    }
-
-    fn check_pid(pid: &str) -> bool {
-        match pid.parse::<i32>() {
-            Ok(_) => return pid.len() == 9,
-            Err(_) => return false,
-        }
-    }
-
-    fn check_entry_strong(&self) -> bool {
-        let byr_ok = match self.dict.get("byr") {
-            Some(byr) => Checker::check_byr(byr),
-            None => false,
-        };
-
-        let iyr_ok = match self.dict.get("iyr") {
-            Some(iyr) => Checker::check_iyr(iyr),
-            None => false,
-        };
-
-        let eyr_ok = match self.dict.get("eyr") {
-            Some(eyr) => Checker::check_eyr(eyr),
-            None => false,
-        };
-
-        let hgt_ok = match self.dict.get("hgt") {
-            Some(hgt) => Checker::check_hgt(hgt),
-            None => false,
-        };
-
-        let hcl_ok = match self.dict.get("hcl") {
-            Some(hcl) => Checker::check_hcl(hcl),
-            None => false,
-        };
-
-        let ecl_ok = match self.dict.get("ecl") {
-            Some(ecl) => Checker::check_ecl(ecl),
-            None => false,
-        };
-
-        let pid_ok = match self.dict.get("pid") {
-            Some(pid) => Checker::check_pid(pid),
-            None => false,
-        };
-
-        byr_ok && iyr_ok && eyr_ok && hgt_ok && hcl_ok && ecl_ok && pid_ok
-    }
-
-    fn check_entry(&mut self, entry: &String) -> Entry {
-        for parameter in self.re_line.captures_iter(entry) {
-            let param = parameter.get(1).map_or("", |m| m.as_str());
-            let captures = self.re_entry.captures(param).unwrap();
-            let key = captures.get(1).map_or("", |m| m.as_str());
-            let val = captures.get(2).map_or("", |m| m.as_str());
-            self.dict.insert(key.to_string(), val.to_string());
+fn check_line(line: &str) -> Entry {
+    if CHECKS.iter().all(|(field, check)| {
+        if line.contains(field) {
+            let postfix = line.split(field).last().unwrap();
+            let value = postfix
+                .split_whitespace()
+                .next()
+                .unwrap()
+                .trim_start_matches(':');
+            return check(value);
         }
 
-        if !self.check_entry_weak() {
-            self.dict.clear();
-            return Entry::Bad;
-        }
+        false
+    }) {
+        return Entry::Strong;
+    }
 
-        if !self.check_entry_strong() {
-            self.dict.clear();
-            return Entry::Weak;
-        }
-
-        self.dict.clear();
-        Entry::Strong
+    if CHECKS.iter().all(|(field, _)| line.contains(field)) {
+        Entry::Weak
+    } else {
+        Entry::Bad
     }
 }
 
 fn main() {
     let filename = "day4/input.txt";
     let file = File::open(filename).unwrap();
-    let reader = BufReader::new(file);
-    let mut weak_count = 0;
-    let mut strong_count = 0;
+    let mut reader = BufReader::new(file);
+    let mut buf = String::new();
+    let (mut weak_count, mut strong_count) = (0, 0);
 
-    let mut owned_string: String = String::from("");
-    let mut checker = Checker::new();
-    for (_, line) in reader.lines().enumerate() {
-        let line = line.unwrap();
-        if line != "" {
-            owned_string.push_str(&line);
-            owned_string.push_str(&" ");
-        } else {
-            match checker.check_entry(&owned_string) {
+    while let Ok(len) = reader.read_line(&mut buf) {
+        // If a single symbol, it's a new line. Meaning we passed a block with
+        // an entry, so check the buffer and then clear it. Otherwise keep
+        // reading.
+        if len <= 1 {
+            let line = &buf.replace("\n", " ");
+            match check_line(line) {
                 Entry::Bad => {}
                 Entry::Weak => weak_count += 1,
                 Entry::Strong => strong_count += 1,
             }
 
-            owned_string = String::from("");
+            buf.clear();
+            if len == 0 {
+                break;
+            }
         }
     }
-
-    // Check the last entry
-    match checker.check_entry(&owned_string) {
-        Entry::Bad => {}
-        Entry::Weak => weak_count += 1,
-        Entry::Strong => strong_count += 1,
-    }
-
     println!(
         "There are {} solid passports and {} meh (but still fine) passports, total {} valid",
         strong_count,
