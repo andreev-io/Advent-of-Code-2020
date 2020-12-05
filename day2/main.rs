@@ -51,11 +51,10 @@ fn main() {
 
         let weak_security = validate_weak(password, letter, min, max);
         match weak_security {
-            Security::Good => weak_count +=1,
+            Security::Good => weak_count += 1,
             _ => {}
         }
-        
-        
+
         let (pos_one, pos_two) = (min, max);
         let strong_security = validate_strong(password, letter, pos_one, pos_two);
         match strong_security {

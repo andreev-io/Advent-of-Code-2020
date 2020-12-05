@@ -1,7 +1,7 @@
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 use regex::Regex;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 //TODO: REFACTOR BIG TIME
 // REFACTOR MACHINE GO brrrrrr!
@@ -28,13 +28,13 @@ impl Checker {
     }
 
     fn check_entry_weak(&self) -> bool {
-        let is_good = self.dict.contains_key("byr") 
-                    && self.dict.contains_key("iyr")
-                    && self.dict.contains_key("eyr")
-                    && self.dict.contains_key("hgt")
-                    && self.dict.contains_key("hcl")
-                    && self.dict.contains_key("pid")
-                    && self.dict.contains_key("ecl");
+        let is_good = self.dict.contains_key("byr")
+            && self.dict.contains_key("iyr")
+            && self.dict.contains_key("eyr")
+            && self.dict.contains_key("hgt")
+            && self.dict.contains_key("hcl")
+            && self.dict.contains_key("pid")
+            && self.dict.contains_key("ecl");
 
         is_good
     }
@@ -42,21 +42,21 @@ impl Checker {
     fn check_byr(byr: &str) -> bool {
         match byr.parse::<i32>() {
             Ok(yr) => return 1920 <= yr && yr <= 2002,
-            Err(_) => return false
+            Err(_) => return false,
         }
     }
 
     fn check_iyr(iyr: &str) -> bool {
         match iyr.parse::<i32>() {
             Ok(yr) => return 2010 <= yr && yr <= 2020,
-            Err(_) => return false
+            Err(_) => return false,
         }
     }
 
     fn check_eyr(eyr: &str) -> bool {
         match eyr.parse::<i32>() {
             Ok(yr) => return 2020 <= yr && yr <= 2030,
-            Err(_) => return false
+            Err(_) => return false,
         }
     }
 
@@ -76,10 +76,10 @@ impl Checker {
                             return false;
                         }
                     }
-                    Err(_) => return false
+                    Err(_) => return false,
                 }
-            },
-            None => return false
+            }
+            None => return false,
         };
     }
 
@@ -96,44 +96,44 @@ impl Checker {
     fn check_pid(pid: &str) -> bool {
         match pid.parse::<i32>() {
             Ok(_) => return pid.len() == 9,
-            Err(_) => return false
+            Err(_) => return false,
         }
     }
 
     fn check_entry_strong(&self) -> bool {
-        let byr_ok =  match self.dict.get("byr") {
+        let byr_ok = match self.dict.get("byr") {
             Some(byr) => Checker::check_byr(byr),
-            None => false
+            None => false,
         };
 
-        let iyr_ok =  match self.dict.get("iyr") {
+        let iyr_ok = match self.dict.get("iyr") {
             Some(iyr) => Checker::check_iyr(iyr),
-            None => false
+            None => false,
         };
 
-        let eyr_ok =  match self.dict.get("eyr") {
+        let eyr_ok = match self.dict.get("eyr") {
             Some(eyr) => Checker::check_eyr(eyr),
-            None => false
+            None => false,
         };
 
-        let hgt_ok =  match self.dict.get("hgt") {
+        let hgt_ok = match self.dict.get("hgt") {
             Some(hgt) => Checker::check_hgt(hgt),
-            None => false
+            None => false,
         };
 
-        let hcl_ok =  match self.dict.get("hcl") {
+        let hcl_ok = match self.dict.get("hcl") {
             Some(hcl) => Checker::check_hcl(hcl),
-            None => false
+            None => false,
         };
 
-        let ecl_ok =  match self.dict.get("ecl") {
+        let ecl_ok = match self.dict.get("ecl") {
             Some(ecl) => Checker::check_ecl(ecl),
-            None => false
+            None => false,
         };
 
-        let pid_ok =  match self.dict.get("pid") {
+        let pid_ok = match self.dict.get("pid") {
             Some(pid) => Checker::check_pid(pid),
-            None => false
+            None => false,
         };
 
         byr_ok && iyr_ok && eyr_ok && hgt_ok && hcl_ok && ecl_ok && pid_ok
@@ -179,7 +179,7 @@ fn main() {
             owned_string.push_str(&" ");
         } else {
             match checker.check_entry(&owned_string) {
-                Entry::Bad => {},
+                Entry::Bad => {}
                 Entry::Weak => weak_count += 1,
                 Entry::Strong => strong_count += 1,
             }
@@ -190,10 +190,15 @@ fn main() {
 
     // Check the last entry
     match checker.check_entry(&owned_string) {
-        Entry::Bad => {},
+        Entry::Bad => {}
         Entry::Weak => weak_count += 1,
         Entry::Strong => strong_count += 1,
     }
 
-    println!("There are {} solid passports and {} meh (but still fine) passports, total {} valid", strong_count, weak_count, strong_count+weak_count);
+    println!(
+        "There are {} solid passports and {} meh (but still fine) passports, total {} valid",
+        strong_count,
+        weak_count,
+        strong_count + weak_count
+    );
 }
