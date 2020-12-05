@@ -1,6 +1,8 @@
-use std::collections::BinaryHeap;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::{
+    collections::BinaryHeap,
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 fn main() {
     let filename = "day5/input.txt";
@@ -9,17 +11,9 @@ fn main() {
     let mut heap = BinaryHeap::new();
 
     for (_, line) in reader.lines().enumerate() {
-        let line = line.unwrap();
-        let mut id = 0;
-        for pos in line.chars() {
-            match pos {
-                'F' | 'L' => id = id << 1,
-                'B' | 'R' => id = (id << 1) | 1,
-                _ => panic!("bad input"),
-            }
-        }
-
-        heap.push(id);
+        heap.push(line.unwrap().chars().fold(0, |acc, c| {
+            (acc << 1) + if c == 'B' || c == 'R' { 1 } else { 0 }
+        }));
     }
 
     println!("max id is {}", heap.peek().unwrap());
