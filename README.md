@@ -1,3 +1,3 @@
-# WIN AOC 2020
+# WIN Advent of Code 2020
 
-Run: ```cargo run --bin <day1> ```
+Run: ```cargo run --bin <dayN> ```
