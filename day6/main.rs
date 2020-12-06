@@ -7,6 +7,9 @@ use std::{
     io::{BufRead, BufReader},
 };
 
+// TODO: better solutions is bitmaps with count_ones()
+// need u32 for the alphabet
+
 lazy_static! {
     static ref UNIQUES: Mutex<HashSet<char>> = Mutex::new(HashSet::new());
     static ref FREQ: Mutex<HashMap<char, usize>> = Mutex::new(HashMap::new());
