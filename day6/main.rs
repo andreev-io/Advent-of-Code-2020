@@ -1,78 +1,53 @@
-use lazy_static::lazy_static;
-use std::collections::HashMap;
-use std::sync::Mutex;
-use std::{
-    collections::HashSet,
-    fs::File,
-    io::{BufRead, BufReader},
-};
+#![feature(iterator_fold_self)]
+// nightly only :(
 
-// TODO: better solutions is bitmaps with count_ones()
-// need u32 for the alphabet
+use std::{fs::File, io, io::prelude::*};
 
-lazy_static! {
-    static ref UNIQUES: Mutex<HashSet<char>> = Mutex::new(HashSet::new());
-    static ref FREQ: Mutex<HashMap<char, usize>> = Mutex::new(HashMap::new());
-}
-
-fn check_group_weak(line: &str) -> usize {
-    let mut set = UNIQUES.lock().unwrap();
-    for c in line.chars() {
-        set.insert(c);
-    }
-
-    let mut uniques = set.len();
-    if set.contains(&' ') {
-        uniques -= 1;
-    }
-
-    set.clear();
-    return uniques;
-}
-
-fn check_group_strong(line: &str, group_size: usize) -> usize {
-    let mut map = FREQ.lock().unwrap();
-
-    for c in line.chars() {
-        let counter = map.entry(c).or_insert(0);
-        *counter += 1;
-    }
-
-    let valid_chars = map
-        .iter()
-        .fold(0, |acc, (_, freq)| acc + (*freq == group_size) as usize);
-
-    map.clear();
-    return valid_chars;
-}
-
-fn main() {
-    let filename = "day6/input.txt";
-    let file = File::open(filename).unwrap();
-    let reader = BufReader::new(file);
-
-    let (mut weak_totals, mut strong_totals) = (0, 0);
-    let mut group_size = 0;
-
-    let mut owned_str = String::from("");
-    for line in reader.lines() {
-        let line = line.unwrap();
-        if line != "" {
-            owned_str.push_str(&line);
-            group_size += 1;
-            continue;
-        } else {
-            owned_str = owned_str.replace("\n", " ");
-            weak_totals += check_group_weak(&owned_str);
-            strong_totals += check_group_strong(&owned_str, group_size);
-            group_size = 0;
-            owned_str = "".to_string();
+// input is multiple lines representing a group. split by lines, then for each
+// line take the character as ascii and mark its presence in the bitmap. return
+// number of ones in the bitmap.
+fn or_count(group: &str) -> u32 {
+    let bitmap = group.split("\n").fold(0, |mut acc: u32, line| {
+        for c in line.chars() {
+            acc |= 1 << (c as u8 - 'a' as u8);
         }
-    }
 
-    // one more time for the last entry
-    weak_totals += check_group_weak(&owned_str);
-    strong_totals += check_group_strong(&owned_str, group_size);
+        acc
+    });
 
-    println!("p1: {}, pt2: {}", weak_totals, strong_totals);
+    bitmap.count_ones()
+}
+
+fn and_count(group: &str) -> u32 {
+    let bitmap: Option<u32> = group
+        .split("\n")
+        .map(|line| {
+            // transform the line into a bitmap for the person
+            let mut person = 0;
+            for c in line.chars() {
+                person |= 1 << (c as u8 - 'a' as u8);
+            }
+
+            person
+        })
+        // fold bitmaps across people in the group
+        .fold_first(|p1, p2| p1 & p2);
+
+    bitmap.unwrap().count_ones()
+}
+
+fn main() -> io::Result<()> {
+    let mut f = File::open("day6/input.txt")?;
+    let mut buffer = String::new();
+    f.read_to_string(&mut buffer)?;
+
+    // do i really need to clone? what's a better way?
+    let s1 = buffer.split("\n\n").map(|s| s.trim());
+    let s2 = s1.clone();
+
+    let sum_one: u32 = s1.map(|group| or_count(group)).sum();
+    let sum_two: u32 = s2.map(|s| and_count(s)).sum();
+
+    println!("pt 1: {} pt 2: {}", sum_one, sum_two);
+    Ok(())
 }
