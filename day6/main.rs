@@ -35,9 +35,9 @@ fn check_group_strong(line: &str, group_size: usize) -> usize {
         *counter += 1;
     }
 
-    let valid_chars = map.iter().fold(0, |acc, (_, freq)| {
-        acc + if *freq == group_size { 1 } else { 0 }
-    });
+    let valid_chars = map
+        .iter()
+        .fold(0, |acc, (_, freq)| acc + (*freq == group_size) as usize);
 
     map.clear();
     return valid_chars;
