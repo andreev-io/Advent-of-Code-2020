@@ -22,10 +22,7 @@ impl Input {
 
             for cap in RE_CONTENT.captures_iter(line) {
                 let (content, count) = (cap[2].to_string(), cap[1].parse().unwrap());
-                contents
-                    .get_mut(&key)
-                    .unwrap()
-                    .push((content, count));
+                contents.get_mut(&key).unwrap().push((content, count));
             }
         }
 
@@ -33,13 +30,10 @@ impl Input {
     }
 
     fn count_containers(&self, inner: &str) -> usize {
-        self.contents.iter().fold(0, |acc, (color, _)| {
-            if self.contains(color, inner) {
-                acc + 1
-            } else {
-                acc
-            }
-        })
+        self.contents
+            .iter()
+            .filter(|(color, _)| self.contains(color, inner))
+            .count()
     }
 
     fn contains(&self, outer: &str, inner: &str) -> bool {
@@ -62,7 +56,7 @@ impl Input {
 fn main() -> io::Result<()> {
     let mut buffer = String::new();
     File::open("day7/input.txt")?.read_to_string(&mut buffer)?;
-    
+
     let input = Input::new(&buffer);
     let target = String::from("shiny gold");
     println!(
