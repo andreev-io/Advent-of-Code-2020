@@ -1,4 +1,4 @@
-use std::{fs::File, io, io::prelude::*};
+use std::{fs::File, io, io::prelude::*, time::Instant};
 
 struct Program {
     tampered: bool,
@@ -91,10 +91,15 @@ fn main() -> io::Result<()> {
 
     let mut i = -1;
     let mut program = Program::new(&buffer, i);
+    let now_one = Instant::now();
     if let Runtime::Looped(acc) = program.run() {
         println!("Accumulator before entering the loop is {}", acc);
+        println!("Part 1 solved in {}μs", now_one.elapsed().as_micros());
     };
 
+    // For an improvement idea, see
+    // https://www.reddit.com/r/adventofcode/comments/k8zdx3/day_8_part_2_without_bruteforce/gf19rwx/.
+    let now_two = Instant::now();
     loop {
         let mut program = Program::new(&buffer, i);
 
@@ -111,8 +116,11 @@ fn main() -> io::Result<()> {
             }
             Runtime::Terminated(acc) => {
                 println!("Got accumulator {} by fixing instruction {}", acc, i);
-                return Ok(());
+                break;
             }
         }
     }
+    
+    println!("Part 2 solved in: {}ms", now_two.elapsed().as_millis());
+    Ok(())
 }
