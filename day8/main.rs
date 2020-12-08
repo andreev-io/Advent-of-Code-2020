@@ -3,6 +3,15 @@ use std::{collections::HashSet, fs::File, io, io::prelude::*, time::Instant};
 
 struct Program {
     instructions: Vec<Op>,
+    visited: Vec<bool>,
+    index: usize,
+    acc: i32,
+}
+
+enum OpResult {
+    Looped,
+    Terminated,
+    Ok,
 }
 
 enum Runtime {
@@ -33,47 +42,72 @@ impl Program {
             }
         }
 
-        Program { instructions }
+        let visited = vec![false; instructions.len()];
+        Program {
+            instructions,
+            visited,
+            acc: 0,
+            index: 0,
+        }
     }
 
-    // Execute a single instruction.
-    fn step(&self, acc: i32, index: usize, op: &Op) -> (i32, usize) {
+    fn reset(&mut self) {
+        self.visited = vec![false; self.instructions.len()];
+        self.acc = 0;
+        self.index = 0;
+    }
+
+    // Execute a single instruction. Instruction can be overridden by providing
+    // override_op.
+    fn step(&mut self, override_op: Option<&Op>) -> OpResult {
+        let (old_acc, old_index) = (self.acc, self.index);
+
+        let mut op = &self.instructions[old_index];
+        if let Some(override_op) = override_op {
+            op = &override_op;
+        }
+
         match op {
             Op::ACC(delta) => {
-                return (acc + delta, index + 1);
+                self.acc = old_acc + delta;
+                self.index = old_index + 1;
             }
             Op::JMP(delta) => {
-                return (acc, ((index as i32) + delta) as usize);
+                self.index = ((old_index as i32) + delta) as usize;
             }
             Op::NOP(_) => {
-                return (acc, index + 1);
+                self.index = old_index + 1;
             }
         }
+
+        if self.index == self.instructions.len() {
+            return OpResult::Terminated;
+        }
+
+        if self.visited[self.index] {
+            (self.acc, self.index) = (old_acc, old_index);
+            return OpResult::Looped;
+        }
+
+        self.visited[old_index] = true;
+        return OpResult::Ok;
     }
 
     // Run the program. The outcome is either a detected loop, in which case the
     // accumulator value before entering the loop for the first time is
     // returned, or termination, in which case the resulting accumulator is
     // returned.
-    fn run(&mut self, start: usize) -> Runtime {
-        let mut visited = vec![false; self.instructions.len()];
-        let (mut acc, mut index) = (0, start);
+    fn run(&mut self) -> Runtime {
         loop {
-            let len = self.instructions.len();
-            if index == len {
-                return Runtime::Terminated(acc);
+            match self.step(None) {
+                OpResult::Looped => return Runtime::Looped(self.acc),
+                OpResult::Terminated => return Runtime::Terminated(self.acc),
+                OpResult::Ok => {}
             }
-
-            if visited[index] {
-                return Runtime::Looped(acc);
-            }
-
-            visited[index] = true;
-            (acc, index) = self.step(acc, index, &self.instructions[index]);
         }
     }
 
-    // It can be proved that an instruction T succeeding a flipped instruction F
+    // It can be proven that an instruction T succeeding a flipped instruction F
     // leads to termination if and only if the program started at the
     // instruction T terminates.
     //
@@ -83,42 +117,43 @@ impl Program {
     // update the program to run F in place of the original.
     fn fix_self(&mut self) -> Option<usize> {
         // Record terminating instructions Ts.
-        let terminating_starts = &mut HashSet::new();
+        let terminators = &mut HashSet::new();
         for i in 0..self.instructions.len() {
-            match self.run(i) {
+            self.reset();
+            self.index = i;
+            match self.run() {
                 Runtime::Looped(_) => continue,
-                Runtime::Terminated(_) => terminating_starts.insert(i),
+                Runtime::Terminated(_) => terminators.insert(i),
             };
         }
 
-        let mut index = 0;
+        self.reset();
         loop {
-            // Attempt to run a flipped instruction F instead of what's given.
-            // If the resulting next index is in Ts, change the program and
-            // return.
-            match self.instructions[index] {
+            // Attempt to run a single flipped instruction F instead of what's
+            // given. If the resulting next index is in Ts, change the program
+            // and return.
+            let (old_index, old_acc) = (self.index, self.acc);
+            match self.instructions[old_index] {
                 Op::ACC(_) => {}
                 Op::JMP(delta) => {
-                    let (_, next_index_candidate) = self.step(0, index, &Op::NOP(delta));
-                    if terminating_starts.contains(&next_index_candidate) {
-                        self.instructions[index] = Op::NOP(delta);
-                        return Some(index);
+                    self.step(Some(&Op::NOP(delta)));
+                    if terminators.contains(&self.index) {
+                        self.instructions[old_index] = Op::NOP(delta);
+                        return Some(old_index);
                     }
                 }
                 Op::NOP(delta) => {
-                    let (_, next_index_candidate) = self.step(0, index, &Op::JMP(delta));
-                    if terminating_starts.contains(&next_index_candidate) {
-                        self.instructions[index] = Op::JMP(delta);
-                        return Some(index);
+                    self.step(Some(&Op::JMP(delta)));
+                    if terminators.contains(&self.index) {
+                        self.instructions[old_index] = Op::JMP(delta);
+                        return Some(old_index);
                     }
                 }
             }
 
-            // Otherwise run the original given instruction. Note: cargo fmt
-            // doesn't recognize the assignment destructuring crate attribute at
-            // the time of writing, hence the awkward syntax.
-            let _acc;
-            (_acc, index) = self.step(0, index, &self.instructions[index]);
+            // Otherwise run the original given instruction.
+            (self.index, self.acc) = (old_index, old_acc);
+            self.step(None);
         }
     }
 }
@@ -129,20 +164,31 @@ fn main() -> io::Result<()> {
     let mut program = Program::new(&buffer);
 
     let now_one = Instant::now();
-    if let Runtime::Looped(acc) = program.run(0) {
-        println!("Accumulator before entering the loop is {}", acc);
-        println!("Part 1 solved in {}μs", now_one.elapsed().as_micros());
+    let mut pt_one_solution = 0;
+    if let Runtime::Looped(acc) = program.run() {
+        pt_one_solution = acc
     };
+    let pt_1 = now_one.elapsed().as_micros();
 
+    program.reset();
     let now_two = Instant::now();
     let fixed_instruction = program.fix_self().unwrap();
-    if let Runtime::Terminated(acc) = program.run(0) {
-        println!(
-            "Accumulator after termination is {}, solved by fixing instruction {}",
-            acc, fixed_instruction
-        );
-        println!("Part 2 solved in {}μs", now_two.elapsed().as_micros());
+
+    let mut pt_two_solution = 0;
+    if let Runtime::Terminated(acc) = program.run() {
+        pt_two_solution = acc
     };
 
+    let pt_2 = now_two.elapsed().as_micros();
+    println!(
+        "Accumulator before entering the loop is {}",
+        pt_one_solution
+    );
+    println!("Part 1 solved in {}μs", pt_1);
+    println!(
+        "Accumulator after termination is {}, solved by fixing instruction {}",
+        pt_two_solution, fixed_instruction
+    );
+    println!("Part 2 solved in {}μs", pt_2);
     Ok(())
 }
