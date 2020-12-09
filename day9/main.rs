@@ -1,27 +1,18 @@
-use lazy_static::lazy_static;
-use std::collections::HashSet;
-use std::collections::VecDeque;
-use std::iter::FromIterator;
-use std::sync::Mutex;
-use std::{fs::File, io, io::prelude::*};
+use std::{
+    collections::{HashSet, VecDeque},
+    fs::File,
+    io,
+    io::prelude::*,
+    iter::FromIterator,
+};
 
 const SIZE: i64 = 25;
-
-lazy_static! {
-    static ref DEQUEUE: Mutex<VecDeque<i64>> = Mutex::new(VecDeque::new());
-    static ref SET: Mutex<HashSet<i64>> = Mutex::new(HashSet::new());
-}
-
-fn check_num(num: i64) -> bool {
-    let q = DEQUEUE.lock().unwrap();
-    let s = SET.lock().unwrap();
-
-    q.iter().any(|n| 2 * n != num && s.contains(&(num - n)))
-}
 
 fn main() -> io::Result<()> {
     let mut buffer = String::new();
     File::open("day9/input.txt")?.read_to_string(&mut buffer)?;
+    let mut q: VecDeque<i64> = VecDeque::new();
+    let mut s: HashSet<i64> = HashSet::new();
     let mut nums = buffer
         .split("\n")
         .map(|s| s.trim())
@@ -29,7 +20,6 @@ fn main() -> io::Result<()> {
 
     // Fill in the preamble.
     for _ in 0..SIZE {
-        let (mut q, mut s) = (DEQUEUE.lock().unwrap(), SET.lock().unwrap());
         let num = nums.nth(0).unwrap();
         s.insert(num);
         q.push_back(num);
@@ -37,12 +27,11 @@ fn main() -> io::Result<()> {
 
     let mut pt_one_answer = 0;
     for num in nums {
-        if !check_num(num) {
+        if !q.iter().any(|n| 2 * n != num && s.contains(&(num - n))) {
             pt_one_answer = num;
             break;
         }
 
-        let (mut q, mut s) = (DEQUEUE.lock().unwrap(), SET.lock().unwrap());
         s.remove(&q.pop_front().unwrap());
         q.push_back(num);
         s.insert(num);
