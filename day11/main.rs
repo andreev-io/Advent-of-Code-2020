@@ -2,6 +2,10 @@
 use std::{fs::File, io, io::prelude::*};
 
 // TODO: fix i32 <-> usize shenanigans
+//
+// TODO: stop wasting memory and alternate between two matrices, read/write
+//
+// For a speedup, one could simply cache neighbors
 
 const MOVES: [(i32, i32); 8] = [
     (-1, -1),
