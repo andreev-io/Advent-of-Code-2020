@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
                     is_prev_new = true;
                 }
 
-                v.insert(prev, i-1);
+                v.insert(prev, i - 1);
                 prev = 0;
             } else {
                 // let prev_index = v.get(&prev).unwrap();
@@ -35,12 +35,12 @@ fn main() -> io::Result<()> {
                 if let Some(prev_i) = v.get(&prev) {
                     prev_index = *prev_i;
                 } else {
-                    prev_index = i-1;
+                    prev_index = i - 1;
                 }
                 // println!("prev index {}", prev_index);
                 let new_num = i - 1 - prev_index;
                 // println!("saying {}", new_num);
-                v.insert(prev, i-1);
+                v.insert(prev, i - 1);
                 prev = new_num;
                 is_prev_new = !v.contains_key(&new_num);
             }
