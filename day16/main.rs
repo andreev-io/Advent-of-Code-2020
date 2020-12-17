@@ -1,10 +1,10 @@
 #![feature(destructuring_assignment)]
 use lazy_static::lazy_static;
+use rand::seq::SliceRandom;
 use regex::Regex;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::{fs, io};
-use rand::seq::SliceRandom;
 
 // THIS IS THE WORST CODE I HAVE EVER WRITTEN
 // It might take a while to solve depending on luck (random values ftw)
@@ -139,7 +139,6 @@ fn main() -> io::Result<()> {
                     satisfies.push(key.to_string());
                 }
             }
- 
 
             let rand_key = satisfies.choose(&mut rand::thread_rng()).unwrap().clone();
             let curr_i = ordered_checks.get(&rand_key).unwrap().clone();
