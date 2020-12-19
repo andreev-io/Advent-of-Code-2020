@@ -31,7 +31,7 @@ fn main() -> io::Result<()> {
                 prev = 0;
             } else {
                 // let prev_index = v.get(&prev).unwrap();
-                let mut prev_index = 0;
+                let prev_index;
                 if let Some(prev_i) = v.get(&prev) {
                     prev_index = *prev_i;
                 } else {
