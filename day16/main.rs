@@ -1,13 +1,7 @@
 #![feature(destructuring_assignment)]
 use lazy_static::lazy_static;
-use rand::seq::SliceRandom;
 use regex::Regex;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::{fs, io};
-
-// THIS IS THE WORST CODE I HAVE EVER WRITTEN
-// It might take a while to solve depending on luck (random values ftw)
+use std::{fs::File, io, io::prelude::*};
 
 // Note for when I refactor: good way to solve is to have a matrix of valid
 // options (ticket_parameter x constraints) and then do gaussian elimination. if
@@ -17,155 +11,123 @@ lazy_static! {
     static ref CONSTRAINT: Regex = Regex::new(r"(\w+ ?\w+): (\d+)-(\d+) or (\d+)-(\d+)").unwrap();
 }
 
+struct Check {
+    name: String,
+    bounds: [(usize, usize); 2],
+    idx: i32,
+}
+
 fn main() -> io::Result<()> {
-    let file_contents = fs::read_to_string("day16/input.txt").unwrap();
-    let lines = file_contents.lines().map(|s| s.trim());
     // field -> (lower bound, upper bound) or (lower bound, upper bound)
-    let mut checks: HashMap<String, [(usize, usize); 2]> = HashMap::new();
+    let mut checks: Vec<Check> = Vec::new();
 
-    let mut nearbies = false;
-    let mut digits: Vec<Vec<usize>> = Vec::new();
-    for line in lines {
-        if line == "" {
-            continue;
-        } else if line == "nearby tickets:" {
-            nearbies = true;
-            continue;
-        }
+    let mut buffer = String::new();
+    File::open("day16/input.txt")?.read_to_string(&mut buffer)?;
+    let lines: Vec<&str> = buffer.split("\n\n").collect();
 
-        if nearbies {
-            let inputs = line.split(",").map(|d| d.parse::<usize>().unwrap());
-            let mut valid = false;
-            for digit in inputs.clone() {
-                let mut digit_valid = false;
-                for (_, check) in checks.iter() {
-                    let satisfied = (check[0].0 <= digit && check[0].1 >= digit)
-                        || (check[1].0 <= digit && check[1].1 >= digit);
-                    if satisfied {
-                        digit_valid = true;
-                        break;
-                    }
-                }
-
-                if digit_valid {
-                    valid = true;
-                } else {
-                    valid = false;
-                    break;
-                }
-            }
-
-            if valid {
-                digits.push(inputs.collect());
-            }
-        }
-
+    for line in lines[0].split("\n") {
         if let Some(caps) = CONSTRAINT.captures(line) {
             let key = caps.get(1).unwrap().as_str();
             let first_low = caps.get(2).unwrap().as_str().parse::<usize>().unwrap();
             let first_high = caps.get(3).unwrap().as_str().parse::<usize>().unwrap();
             let second_low = caps.get(4).unwrap().as_str().parse::<usize>().unwrap();
             let second_high = caps.get(5).unwrap().as_str().parse::<usize>().unwrap();
-            checks.insert(
-                key.to_string(),
-                [(first_low, first_high), (second_low, second_high)],
-            );
+            checks.push(Check {
+                name: key.to_string(),
+                bounds: [(first_low, first_high), (second_low, second_high)],
+                idx: -1,
+            });
         }
     }
 
-    let mut ordered_checks: HashMap<String, usize> = HashMap::new();
-    let mut assigned_checks: HashSet<String> = HashSet::new();
-    let mut asigned_indices: HashSet<usize> = HashSet::new();
-    // i is the index within one ticket
-    let mut k = 0;
-    loop {
-        let i = k % 20;
-        // println!("i {}", i);
-        // for i in 0..digits[0].len() {
-        if asigned_indices.contains(&i) {
-            k += 1;
-            if ordered_checks.len() == 20 && asigned_indices.len() == 20 {
-                break;
-            }
+    let my_ticket: &str = lines[1].split("\n").collect::<Vec<&str>>()[1];
+    let mut digits: Vec<Vec<usize>> = Vec::new();
+
+    // Filter out corrupt tickets
+    for (i, line) in lines[2].split("\n").enumerate() {
+        if i == 0 {
             continue;
         }
 
-        // j is the index of the ticket
-        let mut ok = false;
-        for (key, check) in checks.iter() {
-            if assigned_checks.contains(key) {
-                continue;
-            }
-
-            let mut satisfied = false;
-            for j in 0..digits.len() {
-                // println!("dig {} {} {}", digits[j][i], j, i);
-                satisfied = (check[0].0 <= digits[j][i] && check[0].1 >= digits[j][i])
-                    || (check[1].0 <= digits[j][i] && check[1].1 >= digits[j][i]);
-                if !satisfied {
-                    // println!("ticket {} failed {} for {} with {}", j, i, key, digits[j][i]);
+        let inputs = line.split(",").map(|d| d.parse::<usize>().unwrap());
+        let mut valid = false;
+        for digit in inputs.clone() {
+            let mut digit_valid = false;
+            for check in checks.iter() {
+                let satisfied = (check.bounds[0].0 <= digit && check.bounds[0].1 >= digit)
+                    || (check.bounds[1].0 <= digit && check.bounds[1].1 >= digit);
+                if satisfied {
+                    digit_valid = true;
                     break;
                 }
             }
-            if !satisfied {
-                ok = false;
-                continue;
+
+            if digit_valid {
+                valid = true;
             } else {
-                // println!("SATISFIED? {} {} {}", key, satisfied, i);
-                ordered_checks.insert(key.to_string(), i);
-                assigned_checks.insert(key.to_string());
-                ok = true;
-                asigned_indices.insert(i);
+                valid = false;
                 break;
             }
         }
 
-        if !ok {
-            // println!("Problem with {}", i);
-            let mut satisfies: Vec<String> = Vec::new();
-            for (key, check) in checks.iter() {
-                let mut satisfied = false;
-                for j in 0..digits.len() {
-                    satisfied = (check[0].0 <= digits[j][i] && check[0].1 >= digits[j][i])
-                        || (check[1].0 <= digits[j][i] && check[1].1 >= digits[j][i]);
-                    if !satisfied {
-                        break;
-                    }
-                }
+        if valid {
+            digits.push(inputs.collect());
+        }
+    }
 
+    let mut matrix: Vec<Vec<usize>> = vec![vec![0; digits[0].len()]; checks.len()];
+
+    // i is the index within a ticket
+    for i in 0..digits[0].len() {
+        // j is the index of the ticket
+        for (idx, check) in checks.iter().enumerate() {
+            let mut matched = true;
+            // find criteria that are matched by digits at this index in all
+            // ticket
+            for j in 0..digits.len() {
+                let satisfied = (check.bounds[0].0 <= digits[j][i]
+                    && check.bounds[0].1 >= digits[j][i])
+                    || (check.bounds[1].0 <= digits[j][i] && check.bounds[1].1 >= digits[j][i]);
                 if !satisfied {
-                    continue;
-                } else {
-                    satisfies.push(key.to_string());
+                    matched = false;
+                    break;
                 }
             }
 
-            let rand_key = satisfies.choose(&mut rand::thread_rng()).unwrap().clone();
-            let curr_i = ordered_checks.get(&rand_key).unwrap().clone();
-            ordered_checks.insert(rand_key.to_string(), i);
-            assigned_checks.insert(rand_key.to_string());
-            asigned_indices.insert(i);
-            asigned_indices.remove(&curr_i);
-            // println!("Out of options {:?} chose match {} ", satisfies, rand_key);
-        } else {
-            // println!("LENGTH {}", ordered_checks.len());
-            if ordered_checks.len() == 20 && asigned_indices.len() == 20 {
-                break;
-            } else {
-                k += 1;
+            if matched {
+                matrix[idx][i] = 1;
             }
         }
     }
 
-    // println!("{:?} {:?}", ordered_checks, asigned_indices);
-    let splits: Vec<&str> = "131,103,109,67,127,97,89,79,163,59,73,83,61,107,53,193,167,101,71,197"
-        .split(",")
-        .collect();
+    let mut removed_count = 0;
+    loop {
+        let mut removed = 0;
+        for (check_index, row) in matrix.iter().enumerate() {
+            let ones = row.iter().filter(|&i| *i == 1).count();
+            if ones == 1 {
+                let idx = row.iter().position(|&dig| dig == 1).unwrap();
+                checks[check_index].idx = idx as i32;
+                removed = idx;
+                removed_count += 1;
+                break;
+            }
+        }
+
+        for i in 0..matrix.len() {
+            matrix[i][removed] = 0;
+        }
+
+        if removed_count == matrix[0].len() {
+            break;
+        }
+    }
+
+    let splits: Vec<&str> = my_ticket.split(",").collect();
     let mut total = 1;
-    for (k, v) in ordered_checks.iter() {
-        if k.starts_with("departure") {
-            // println!("{} {} {}", k, v, splits[*v]);
-            total *= splits[*v].parse::<usize>().unwrap();
+    for check in checks.iter() {
+        if check.name.starts_with("departure") {
+            total *= splits[check.idx as usize].parse::<usize>().unwrap();
         }
     }
 
