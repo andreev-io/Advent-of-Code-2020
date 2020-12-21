@@ -80,7 +80,12 @@ path = "day18/main.rs"
 name = "day19"
 path = "day19/main.rs"
 
+[[bin]]
+name = "day20"
+path = "day20/main.rs"
+
 [dependencies]
 regex = "1"
 lazy_static = "1.4.0"
 rand = "0.7.3"
+unicode-segmentation = ""

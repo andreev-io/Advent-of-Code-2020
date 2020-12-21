@@ -2,4 +2,4 @@
 
 Run: ```cargo run --bin <dayN> ```
 
-TODO: refactor starting day13 (finals are consuming me right now)
+I finished up to Day 20 part 1. Going to stop here and come back in 2021.

@@ -95,7 +95,7 @@ fn part2() -> io::Result<()> {
                 .unwrap();
 
             let caps = VALUE.captures(line).unwrap();
-            let mut value = caps
+            let value = caps
                 .get(1)
                 .map_or("", |m| m.as_str())
                 .parse::<usize>()
