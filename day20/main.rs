@@ -262,11 +262,11 @@ fn main() -> io::Result<()> {
     let mut grid = parse_input(input);
     println!("{}", backtrack(&mut grid));
     let id0 = grid.placement[0][0];
-    let id1 = grid.placement[0][PLACEMENT_SIDE-1];
-    let id2 = grid.placement[PLACEMENT_SIDE-1][0];
-    let id3 = grid.placement[PLACEMENT_SIDE-1][PLACEMENT_SIDE-1];
+    let id1 = grid.placement[0][PLACEMENT_SIDE - 1];
+    let id2 = grid.placement[PLACEMENT_SIDE - 1][0];
+    let id3 = grid.placement[PLACEMENT_SIDE - 1][PLACEMENT_SIDE - 1];
 
-    println!("{}", id0*id1*id2*id3);
+    println!("{}", id0 * id1 * id2 * id3);
 
     Ok(())
 }
@@ -288,7 +288,7 @@ fn backtrack(grid: &mut Grid) -> bool {
             } else {
                 true
             };
-        
+
             if top_border_ok && left_border_ok {
                 if grid.advance(new_tile.clone()) {
                     println!("{:?}", grid.placement);
@@ -330,7 +330,7 @@ fn parse_input(input: Vec<&str>) -> Grid {
         }
 
         let top = tile_lines[0].to_string();
-        let bottom = tile_lines[HEIGHT-1].to_string();
+        let bottom = tile_lines[HEIGHT - 1].to_string();
         let tile = Tile::new(id, top, right, bottom, left);
         tiles.insert(id, tile);
     }
