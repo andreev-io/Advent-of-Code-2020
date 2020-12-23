@@ -5,7 +5,7 @@ fn main() -> io::Result<()> {
     let mut buffer = String::new();
     File::open("day23/input.txt")?.read_to_string(&mut buffer)?;
 
-    // Part 1 approach doesn't work for part 2 because of egregious lookup
+    // Part 1 approach isn't viable for part 2 because of egregious lookup
     // times.
     let mut nums: VecDeque<usize> = VecDeque::new();
     buffer.split("").for_each(|c| {
@@ -56,6 +56,65 @@ fn main() -> io::Result<()> {
     for i in 1..nums.len() {
         answer.push_str(&nums[i].to_string());
     }
-    println!("{}", answer);
+    println!("Answer 1: {}", answer);
+
+    part_2()
+}
+
+fn part_2() -> io::Result<()> {
+    let mut buffer = String::new();
+    File::open("day23/input.txt")?.read_to_string(&mut buffer)?;
+    let mut input: Vec<usize> = Vec::new();
+    buffer.split("").for_each(|c| {
+        if c != "" {
+            input.push(c.parse().unwrap())
+        }
+    });
+
+    let max = *input.iter().max().unwrap();
+    for i in max+1..=1000000 {
+        input.push(i);
+    }
+
+    let max = *input.iter().max().unwrap();
+    let (mut v, mut head) = prepare(input);
+    for _ in 1..=10000000 {
+        let current_cup = v[head];
+        let next_one = v[current_cup];
+        let next_two = v[next_one];
+        let next_three = v[next_two];
+
+
+        let mut dst = current_cup - 1;
+        while dst == next_one || dst == next_two || dst == next_three || dst < 1 {
+            if dst <= 1 {
+                dst = max;
+            } else {
+                dst = dst - 1;
+            }
+        }
+
+        let after_three = v[next_three];
+        let after_dst = v[dst];
+        v[current_cup] = after_three;
+        v[dst] = next_one;
+        v[next_one] = next_two;
+        v[next_two] = next_three;
+        v[next_three] = after_dst;
+        head = current_cup;
+    }
+
+    println!("Answer 2: {}", v[1]*v[v[1]]);
+
     Ok(())
+}
+
+fn prepare(input: Vec<usize>) -> (Vec<usize>, usize) {
+    let mut v = vec![0; input.len() + 1];
+
+    for (i, j) in input.iter().enumerate() {
+        v[*j] = input[(i + 1) % input.len()];
+    }
+
+    (v, input[input.len() - 1])
 }
