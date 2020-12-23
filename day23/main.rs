@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::{fs::File, io, io::prelude::*};
+use std::time::Instant;
 
 fn main() -> io::Result<()> {
     let mut buffer = String::new();
@@ -61,6 +62,9 @@ fn main() -> io::Result<()> {
     part_2()
 }
 
+// Flat array linked list is a god-given data structure. Humanity should take
+// pride in having discovered it. Aking to fire, it is the corner stone of our
+// species' technological progress.
 fn part_2() -> io::Result<()> {
     let mut buffer = String::new();
     File::open("day23/input.txt")?.read_to_string(&mut buffer)?;
@@ -72,18 +76,19 @@ fn part_2() -> io::Result<()> {
     });
 
     let max = *input.iter().max().unwrap();
-    for i in max+1..=1000000 {
+    for i in max + 1..=1000000 {
         input.push(i);
     }
 
     let max = *input.iter().max().unwrap();
     let (mut v, mut head) = prepare(input);
+
+    let now = Instant::now();
     for _ in 1..=10000000 {
         let current_cup = v[head];
         let next_one = v[current_cup];
         let next_two = v[next_one];
         let next_three = v[next_two];
-
 
         let mut dst = current_cup - 1;
         while dst == next_one || dst == next_two || dst == next_three || dst < 1 {
@@ -104,8 +109,8 @@ fn part_2() -> io::Result<()> {
         head = current_cup;
     }
 
-    println!("Answer 2: {}", v[1]*v[v[1]]);
-
+    println!("Answer 2: {}", v[1] * v[v[1]]);
+    println!("{}s", now.elapsed().as_secs_f32());
     Ok(())
 }
 
