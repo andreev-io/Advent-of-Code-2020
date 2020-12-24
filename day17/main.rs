@@ -1,7 +1,7 @@
 #![feature(destructuring_assignment)]
 use std::{fs::File, io, io::prelude::*};
 
-// todo: good way to rewrite this is to have a general solution for n dimensiona
+// todo: good way to rewrite this is to have a general solution for n dimensions
 
 fn main() -> io::Result<()> {
     let mut buffer = String::new();

@@ -40,6 +40,7 @@ fn main() -> io::Result<()> {
 
     println!("{}", score_one + score_two);
 
+    println!("Part 2 takes about 10 seconds. Wait");
     subgame(&mut q_one_rc, &mut q_two_rc);
 
     let score_one = q_one_rc

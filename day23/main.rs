@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
-use std::{fs::File, io, io::prelude::*};
 use std::time::Instant;
+use std::{fs::File, io, io::prelude::*};
 
 fn main() -> io::Result<()> {
     let mut buffer = String::new();
