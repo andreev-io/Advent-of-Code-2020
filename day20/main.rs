@@ -424,10 +424,10 @@ fn check_for_sea_monsters(mut tile: Tile) -> usize {
             let row_one = &tile.rows[i];
             let row_two = &tile.rows[i + 1];
             let row_three = &tile.rows[i + 2];
-            for j in 0..row_one.len() - 19 {
-                let mut chars_one = row_one.chars();
-                let row_one_symbols = [chars_one.nth(19 + j).unwrap()];
-                let mut chars_two = row_two.chars();
+            for j in 0..row_one.chars().count() - 19 {
+                let mut chars_one = row_one.trim().chars();
+                let row_one_symbols = [chars_one.nth(18 + j).unwrap()];
+                let mut chars_two = row_two.trim().chars();
                 let row_two_symbols = [
                     chars_two.nth(0 + j).unwrap(),
                     chars_two.nth(4).unwrap(),
@@ -438,7 +438,7 @@ fn check_for_sea_monsters(mut tile: Tile) -> usize {
                     chars_two.nth(0).unwrap(),
                     chars_two.nth(0).unwrap(),
                 ];
-                let mut chars_three = row_three.chars();
+                let mut chars_three = row_three.trim().chars();
                 let row_three_symbols = [
                     chars_three.nth(1 + j).unwrap(),
                     chars_three.nth(2).unwrap(),
@@ -454,8 +454,9 @@ fn check_for_sea_monsters(mut tile: Tile) -> usize {
                     && row_three_symbols.len()
                         == row_three_symbols.iter().filter(|&c| *c == '#').count()
                 {
+                    println!("{:?} {:?} {:?}", row_one_symbols, row_two_symbols, row_three_symbols);
                     println!("Found a monster {:?} {} {}", tile.symmetry, i, j);
-                    sea_monster_pounds.insert((i, 19 + j));
+                    sea_monster_pounds.insert((i, 18 + j));
 
                     sea_monster_pounds.insert((i + 1, 19 + j));
                     sea_monster_pounds.insert((i + 1, 18 + j));
@@ -478,7 +479,7 @@ fn check_for_sea_monsters(mut tile: Tile) -> usize {
 
         if sea_monster_pounds.len() != 0 {
             for row in tile.rows {
-                println!("{:?}", row);
+                println!("{}", row);
             }
             break;
         }
