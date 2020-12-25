@@ -454,7 +454,10 @@ fn check_for_sea_monsters(mut tile: Tile) -> usize {
                     && row_three_symbols.len()
                         == row_three_symbols.iter().filter(|&c| *c == '#').count()
                 {
-                    println!("{:?} {:?} {:?}", row_one_symbols, row_two_symbols, row_three_symbols);
+                    println!(
+                        "{:?} {:?} {:?}",
+                        row_one_symbols, row_two_symbols, row_three_symbols
+                    );
                     println!("Found a monster {:?} {} {}", tile.symmetry, i, j);
                     sea_monster_pounds.insert((i, 18 + j));
 

@@ -49,6 +49,7 @@ fn main() -> io::Result<()> {
 
         return acc;
     });
+    println!("{:?}", answer);
 
     Ok(())
 }
