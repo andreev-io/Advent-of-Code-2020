@@ -10,16 +10,7 @@ fn main() -> io::Result<()> {
     let pub_one: usize = splits.next().unwrap().parse().unwrap();
     let pub_two: usize = splits.next().unwrap().parse().unwrap();
 
-    println!("{} {}", pub_one, pub_two);
-    let loop_one = infer_loop_size(pub_one);
-    let loop_two = infer_loop_size(pub_two);
-
-    let key_one = infer_encryption_key(loop_one, pub_two);
-    let key_two = infer_encryption_key(loop_two, pub_one);
-
-    if key_one != key_two {
-        panic!("Symmetric key derivation failed!!!!!!! Someone infiltrated our intel and is tampering with the transmission AAAA")
-    }
+    let key_one = infer_encryption_key(infer_loop_size(pub_one), pub_two);
 
     println!("Answer 1: {}", key_one);
 
@@ -29,6 +20,7 @@ fn main() -> io::Result<()> {
 }
 
 // Self loop_size with other's key
+#[inline]
 fn infer_encryption_key(loop_size: usize, key: usize) -> usize {
     let mut res = 1;
 
@@ -41,6 +33,7 @@ fn infer_encryption_key(loop_size: usize, key: usize) -> usize {
     res
 }
 
+#[inline]
 fn infer_loop_size(pub_key: usize) -> usize {
     let mut res = 1;
 
